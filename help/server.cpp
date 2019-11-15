@@ -6,7 +6,6 @@
 #include <string.h> 
 #include <time.h>
 
-#define PORT 9000 
 
 char *generate_long_string(int n)
 {
@@ -22,6 +21,7 @@ char *generate_long_string(int n)
 int main(int argc, char const *argv[]) 
 { 
     srand(time(NULL));
+    int PORT = (argc > 1) ? atoi(argv[1]) : 9000;
     int server_fd, new_socket, valread; 
     struct sockaddr_in address; 
     int opt = 1; 
@@ -65,11 +65,12 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE); 
     } 
     while(true) {
-        valread = read( new_socket , buffer, 1024); 
-        printf("%s\n",buffer ); 
         char *hello = generate_long_string(rand() % 9000 + 9000); 
         send(new_socket , hello , strlen(hello) , 0 ); 
         printf("Sent: %d bytes.\n", (int)strlen(hello)); 
+        
+        valread = read( new_socket , buffer, 1024); 
+        printf("%s\n",buffer ); 
     }
     return 0; 
 } 

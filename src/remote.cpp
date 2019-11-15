@@ -26,7 +26,7 @@ remote::remote(std::string host, in_port_t port, int64_t timeout) {
 }
 
 void remote::send_all(std::string message) {
-    ssize_t n = this->conn.write(message.c_str(), message.length());
+    size_t n = this->conn.write(message);
     if(n != message.length()) {
         std::cerr << "Error sending message" << std::endl;
     }
@@ -48,7 +48,7 @@ std::string remote::read_all() {
     #ifdef DEBUG
     auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<microseconds>(stop - start); 
-	cout << "Time to read data from server: " << duration.count() << endl;
+	std::cout << "Time to read data from server: " << duration.count() << std::endl;
     #endif 
     
     return res;

@@ -1,1 +1,2 @@
-./main
+#!/bin/bash
+./main $@

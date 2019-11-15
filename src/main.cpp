@@ -17,6 +17,7 @@ int main(int argc, char* argv[])
 	remote r(host, port, 10);
 	
 	std::string map_info = r.read_all();
+	std::cout << "+ Readed: " << map_info.length() << std::endl;
 
 	while (true)
 	{
@@ -31,6 +32,7 @@ int main(int argc, char* argv[])
 		r.send_all(four);
 		map_info = r.read_all();
 		std::cout << "Readed: " << map_info.length() << std::endl;
+		break;
 	}
 	
 
