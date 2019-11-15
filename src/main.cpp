@@ -24,10 +24,13 @@ int main(int argc, char* argv[])
 		std::string four = "1";
 		r.send_all(zero);
 		map_info = r.read_all();
+		std::cout << "Readed: " << map_info.length() << std::endl;
 		r.send_all(zero);
 		map_info = r.read_all();
+		std::cout << "Readed: " << map_info.length() << std::endl;
 		r.send_all(four);
 		map_info = r.read_all();
+		std::cout << "Readed: " << map_info.length() << std::endl;
 	}
 	
 
