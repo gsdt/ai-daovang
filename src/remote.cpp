@@ -26,7 +26,7 @@ remote::remote(std::string host, in_port_t port, int64_t timeout) {
 }
 
 void remote::send_all(std::string message) {
-    ssize_t n = this->conn.write(message);
+    ssize_t n = this->conn.write(message.c_str(), message.length());
     if(n != message.length()) {
         std::cerr << "Error sending message" << std::endl;
     }

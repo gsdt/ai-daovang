@@ -20,11 +20,13 @@ int main(int argc, char* argv[])
 
 	while (true)
 	{
-		r.send_all("0");
+		std::string zero = "0";
+		std::string four = "1";
+		r.send_all(zero);
 		map_info = r.read_all();
-		r.send_all("0");
+		r.send_all(zero);
 		map_info = r.read_all();
-		r.send_all("4");
+		r.send_all(four);
 		map_info = r.read_all();
 	}
 	
