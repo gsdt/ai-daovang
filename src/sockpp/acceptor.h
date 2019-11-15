@@ -45,8 +45,8 @@
 #ifndef __sockpp_acceptor_h
 #define __sockpp_acceptor_h
 
-#include "sockpp/inet_address.h"
-#include "sockpp/stream_socket.h"
+#include "inet_address.h"
+#include "stream_socket.h"
 
 namespace sockpp {
 

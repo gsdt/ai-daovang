@@ -34,8 +34,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // --------------------------------------------------------------------------
 
-#include "sockpp/socket.h"
-#include "sockpp/exception.h"
+#include "socket.h"
+#include "exception.h"
 #include <algorithm>
 #include <cstring>
 #include <fcntl.h>

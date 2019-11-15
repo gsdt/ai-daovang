@@ -48,8 +48,8 @@
 #ifndef __sockpp_tcp_connector_h
 #define __sockpp_tcp_connector_h
 
-#include "sockpp/connector.h"
-#include "sockpp/tcp_socket.h"
+#include "connector.h"
+#include "tcp_socket.h"
 
 namespace sockpp {
 

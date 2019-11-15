@@ -47,7 +47,7 @@
 #ifndef __sockpp_datagram_socket_h
 #define __sockpp_datagram_socket_h
 
-#include "sockpp/socket.h"
+#include "socket.h"
 
 namespace sockpp {
 

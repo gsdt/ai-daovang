@@ -47,7 +47,7 @@
 #ifndef __sockpp_socket_h
 #define __sockpp_socket_h
 
-#include "sockpp/sock_address.h"
+#include "sock_address.h"
 #include <chrono>
 #include <string>
 #include <tuple>

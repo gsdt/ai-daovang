@@ -34,8 +34,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // --------------------------------------------------------------------------
 
-#include "sockpp/datagram_socket.h"
-#include "sockpp/exception.h"
+#include "datagram_socket.h"
+#include "exception.h"
 #include <algorithm>
 
 using namespace std::chrono;

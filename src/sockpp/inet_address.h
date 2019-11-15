@@ -47,7 +47,7 @@
 #ifndef __sockpp_inet_addr_h
 #define __sockpp_inet_addr_h
 
-#include "sockpp/sock_address.h"
+#include "sock_address.h"
 #include <iostream>
 #include <string>
 #include <cstring>

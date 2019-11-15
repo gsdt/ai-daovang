@@ -34,8 +34,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // --------------------------------------------------------------------------
 
-#include "sockpp/stream_socket.h"
-#include "sockpp/exception.h"
+#include "stream_socket.h"
+#include "exception.h"
 #include <algorithm>
 #include <memory>
 

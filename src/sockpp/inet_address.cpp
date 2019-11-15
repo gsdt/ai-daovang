@@ -34,8 +34,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // --------------------------------------------------------------------------
 
-#include "sockpp/inet_address.h"
-#include "sockpp/exception.h"
+#include "inet_address.h"
+#include "exception.h"
 
 using namespace std;
 

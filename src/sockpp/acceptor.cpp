@@ -35,7 +35,7 @@
 // --------------------------------------------------------------------------
 
 #include <cstring>
-#include "sockpp/acceptor.h"
+#include "acceptor.h"
 
 using namespace std;
 

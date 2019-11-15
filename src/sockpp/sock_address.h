@@ -47,7 +47,7 @@
 #ifndef __sockpp_sock_address_h
 #define __sockpp_sock_address_h
 
-#include "sockpp/platform.h"
+#include "platform.h"
 #include <cstring>
 #include <stdexcept>
 
