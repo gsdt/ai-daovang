@@ -1,0 +1,1 @@
+g++ main.cpp remote.cpp sockpp/*.cpp -o ../build/main
