@@ -51,6 +51,7 @@
 #include <chrono>
 #include <string>
 #include <tuple>
+#include <sys/time.h>
 
 namespace sockpp {
 
