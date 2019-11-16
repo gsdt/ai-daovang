@@ -6,10 +6,10 @@
 
 class remote {
     private:
-        sockpp::tcp_connector conn;
+        int socket_fd;
 
     public:
-        remote(std::string host, in_port_t port, int64_t timeout);
+        remote(std::string HOST, int16_t PORT, int64_t timeout);
         void send_all(std::string data);
         std::string read_all();
 };

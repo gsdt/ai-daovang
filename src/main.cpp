@@ -5,6 +5,13 @@
 
 using namespace std::chrono;
 
+const std::string MOVE_LEFT = "0\n";
+const std::string MOVE_RIGHT = "1\n";
+const std::string MOVE_UP = "2\n";
+const std::string MOVE_DOWN = "3\n";
+const std::string FREE = "4\n";
+const std::string CRAFT = "5\n";
+
 int main(int argc, char* argv[])
 {
 	sockpp::socket_initializer sockInit;
@@ -14,25 +21,21 @@ int main(int argc, char* argv[])
 
 	std::cout << "Working on " << host << ":" << port << std::endl;
 
-	remote r(host, port, 10);
+	remote r(host, port, 100);
 	
 	std::string map_info = r.read_all();
-	std::cout << "+ Readed: " << map_info.length() << std::endl;
 
 	while (true)
 	{
-		std::string zero = "0";
-		std::string four = "1";
-		r.send_all(zero);
-		map_info = r.read_all();
-		std::cout << "Readed: " << map_info.length() << std::endl;
-		r.send_all(zero);
-		map_info = r.read_all();
-		std::cout << "Readed: " << map_info.length() << std::endl;
-		r.send_all(four);
-		map_info = r.read_all();
-		std::cout << "Readed: " << map_info.length() << std::endl;
-		break;
+		r.send_all("4");
+		r.read_all();
+
+		r.send_all("4");
+		r.read_all();
+
+
+		r.send_all("1");
+		r.read_all();
 	}
 	
 

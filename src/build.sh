@@ -1,2 +1,2 @@
 #!/bin/bash
-g++ -Wall -DDEBUG main.cpp remote.cpp sockpp/*.cpp -o ../build/main
+g++ -Wall -DDEBUG main.cpp remote.cpp -o ../build/main
