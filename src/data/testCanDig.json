@@ -1,0 +1,84 @@
+{
+    "players": [
+      {
+        "playerId": 0,
+        "posx": 3,
+        "posy": 3,
+        "score": 0,
+        "energy": 10,
+        "state": 5
+      },
+      {
+        "playerId": 1,
+        "posx": 1,
+        "posy": 6,
+        "score": 0,
+        "energy": 2,
+        "state": 5
+      },
+      {
+        "playerId": 2,
+        "posx": 5,
+        "posy": 1,
+        "score": 0,
+        "energy": 10,
+        "state": 5
+      },
+      {
+        "playerId": 3,
+        "posx": 6,
+        "posy": 6,
+        "score": 0,
+        "energy": 10,
+        "state": 5
+      }
+    ],
+    "golds": [
+      {
+        "posx": 3,
+        "posy": 3,
+        "amount": 400
+      },
+      {
+        "posx": 1,
+        "posy": 8,
+        "amount": 700
+      },
+      {
+        "posx": 4,
+        "posy": 4,
+        "amount": 300
+      },
+      {
+        "posx": 4,
+        "posy": 6,
+        "amount": 200
+      },
+      {
+        "posx": 5,
+        "posy": 2,
+        "amount": 250
+      },
+      {
+        "posx": 4,
+        "posy": 2,
+        "amount": 400
+      },
+      {
+        "posx": 6,
+        "posy": 7,
+        "amount": 700
+      },
+      {
+        "posx": 1,
+        "posy": 6,
+        "amount": 50
+      },
+      {
+        "posx": 6,
+        "posy": 3,
+        "amount": 50
+      }
+    ]
+  }
+  
