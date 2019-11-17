@@ -1,2 +1,2 @@
 #!/bin/bash
-zip -r submit/submit.zip buid/ src/
+zip -r submit/submit.zip build/ src/

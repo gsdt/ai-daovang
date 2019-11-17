@@ -9,9 +9,7 @@
 #include <netdb.h>
 #include <iostream>
 
-#define BUFFER_SIZE 20000
-
-using namespace std::chrono;
+#define BUFFER_SIZE 40000
 
 remote::remote(std::string HOST, int16_t PORT, int64_t timeout) {
     // Create socket

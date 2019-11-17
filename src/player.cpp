@@ -19,5 +19,5 @@ void player::show()
     std::cout << "posy: " << this->y << std::endl;
     std::cout << "E: " << this->E << std::endl;
     std::cout << "state: " << this->state << std::endl;
-    std::cout << "restc " << this->rest_count << std::endl << std::endl;
+    std::cout << "restc: " << this->rest_count << std::endl << std::endl;
 }

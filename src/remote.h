@@ -1,7 +1,6 @@
 #ifndef REMOTE_H
 #define REMOTE_H
 
-#include "sockpp/tcp_connector.h"
 #include <string>
 
 class remote {

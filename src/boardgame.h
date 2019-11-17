@@ -16,23 +16,22 @@ private:
 public:
     int w, h, T, my_player_id, maxE;
     boardgame(std::string raw_json);
-
     void update(std::string raw_json);
-    std::vector<gold> golds_list();
-    bool can_move_up(int player_id);
-    bool can_move_down(int player_id);
-    bool can_move_right(int player_id);
-    bool can_move_left(int player_id);
-    bool can_dig(int player_id);
 
-    bool need_to_rest(int player_id);
+    std::vector<gold> golds_list();
+    player get_player(int player_id);
+
+    int can_move(int player_id, int direction);
+    int can_craft(int player_id);
+
+    int need_to_rest(int player_id);
 
     void move_up(int player_id);
     void move_down(int player_id);
     void move_right(int player_id);
     void move_left(int player_id);
     void rest(int player_id);
-
+    int object_at(int x, int y);
     void show();
 
 
