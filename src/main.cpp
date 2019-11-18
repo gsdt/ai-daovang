@@ -6,6 +6,7 @@
 #include <string>
 #include <chrono>
 
+
 int main(int argc, char *argv[])
 {
 	std::string host = (argc > 1) ? argv[1] : "localhost";
@@ -22,48 +23,33 @@ int main(int argc, char *argv[])
 	int code = game.can_move(my_id, D_RIGHT);
 
 	std::cout << code << std::endl;
-	// exit(0);
 
 	int current_direction = D_RIGHT;
-	std::string current_command = MOVE_RIGHT;
 
 	while (true)
 	{
 		int my_id = game.my_player_id;
 		
-		code = game.can_craft(my_id);
-		if (code == OK) {
-			r.send_all(ACT_CRAFT);
+		int action = game.get_best_move(my_id);
+		
+		if(action <0) {
+			r.send_all(CMD[A_FREE]);
 		}
-		if(code == NOT_ENERGY) {
-			r.send_all(ACT_FREE);
-		}
-		if(code == NOT_GOLD) {
-			code = game.can_move(my_id, current_direction);
-			if(code == OK) {
-				r.send_all(current_command);
-				if(current_direction == D_DOWN) {
-					if(game.can_move(my_id, D_RIGHT) == OUT_SIDE) {
-						current_direction = D_LEFT;
-						current_command = MOVE_LEFT;
-					}
-					else {
-						current_direction = D_RIGHT;
-						current_command = MOVE_RIGHT;
-					}
+		else {
+			if(action < 4) {
+				code = game.can_move(my_id, action);
+				if(code == OK) {
+					r.send_all(CMD[action]);
+				}
+				else {
+					r.send_all(CMD[A_FREE]);
 				}
 			}
-			if(code == NOT_ENERGY) {
-				r.send_all(ACT_FREE);
-			}
-			if(code == OUT_SIDE) {
-				if(current_direction == D_RIGHT || current_direction == D_LEFT) {
-					current_direction = D_DOWN;
-					current_command = MOVE_DOWN;
-				}
-				continue;
+			else {
+				r.send_all(CMD[action]);
 			}
 		}
+		
 		std::string msg = r.read_all();
 		game.update(msg);
 	}

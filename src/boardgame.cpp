@@ -2,15 +2,16 @@
 #include "boardgame.h"
 #include "player.h"
 #include "gold.h"
+#include "bfs.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 
 #include <iostream>
+#include <algorithm>
 #include <fstream>
+#include <tgmath.h>
 
 using namespace rapidjson;
-
-
 
 int turn_rest = 0;
 
@@ -30,10 +31,10 @@ boardgame::boardgame(std::string raw_json)
     int n = d["gameinfo"]["numberOfPlayers"].GetInt();
     int x = d["posy"].GetInt();
     int y = d["posx"].GetInt();
-    this-> maxE = d["energy"].GetInt();
+    this->maxE = d["energy"].GetInt();
 
     this->player_list.push_back(player(this->my_player_id, x, y, this->maxE));
-    
+
     this->trap_list.resize(this->h, std::vector<int>(this->w));
 
     //init data for trap
@@ -56,6 +57,9 @@ boardgame::boardgame(std::string raw_json)
         this->golds_map[{x, y}] = amount;
         this->trap_list[x][y] = O_GOLD;
     }
+
+    this->bfs_algorithm.set_data(trap_list);
+    this->free_turn = 0;
 }
 
 void boardgame::update(std::string raw_json)
@@ -81,9 +85,6 @@ void boardgame::update(std::string raw_json)
         p.state = state;
         this->player_list.push_back(p);
     }
-
-    /*TODO: CHECK IF SEVER RESPONSE  IF GOLD = 0 AND 
-    CHANGED LAND (SERVER REPOSONSE WITH JSON AMOUNT = 0 OR DELETE OBJECT)*/
     //init data for gold
     Value &array_gold = d["golds"];
     std::map<std::pair<int, int>, int> new_golds_map;
@@ -105,14 +106,16 @@ void boardgame::update(std::string raw_json)
         }
     }
     golds_map = new_golds_map;
-
     // update data
     this->T--;
 }
 
-player boardgame::get_player(int player_id) {
-    for(player p: this->player_list) {
-        if(p.id == player_id) {
+player boardgame::get_player(int player_id)
+{
+    for (player p : this->player_list)
+    {
+        if (p.id == player_id)
+        {
             return p;
         }
     }
@@ -129,44 +132,23 @@ std::vector<gold> boardgame::golds_list()
     return result;
 }
 
-int boardgame::can_move(int player_id, int direction) {
+int boardgame::can_move(int player_id, int direction)
+{
     player p = this->get_player(player_id);
-    if(direction == D_UP) {
-        if (p.x - 1 < 0)
-            return OUT_SIDE;
-        int need_E = DAMAGE[trap_list[p.x - 1][p.y]];
-        if (p.E > need_E) return OK;
-        return NOT_ENERGY;
+
+    int cx = p.x + DX[direction];
+    int cy = p.y + DY[direction];
+
+    if (cx < 0 || cy < 0 || cx >= this->h || cy >= this->w)
+    {
+        return OUT_SIDE;
     }
 
-    if(direction == D_DOWN) {
-        if (p.x + 1 >= this->h)
-            return OUT_SIDE;
-        int need_E = DAMAGE[trap_list[p.x + 1][p.y]];
-        if (p.E > need_E) return OK;
-        return NOT_ENERGY;
-    }
-
-    if(direction == D_RIGHT) {
-        if (p.y + 1 >= this->w)
-            return OUT_SIDE;
-        int need_E = DAMAGE[trap_list[p.x][p.y + 1]];
-        std::cout << "------------" << std::endl;
-        std::cout << p.E << std::endl;
-        std::cout << need_E << std::endl;
-        if (p.E > need_E) return OK;
-        return NOT_ENERGY;
-    }
-
-    if(direction == D_LEFT) {
-        if (p.y - 1 < 0)
-            return OUT_SIDE;
-        int need_E = DAMAGE[trap_list[p.x][p.y - 1]];
-        if(p.E > need_E) return OK;
-        return NOT_ENERGY;        
-    }
+    int need_E = DAMAGE[trap_list[cx][cy]];
+    if (p.E > need_E)
+        return OK;
+    return NOT_ENERGY;
 }
-
 
 int boardgame::can_craft(int player_id)
 {
@@ -175,50 +157,163 @@ int boardgame::can_craft(int player_id)
     if (!is_gold)
         return NOT_GOLD;
 
-    if (p.E > DIG_COST) return OK;
+    if (p.E > DIG_COST)
+        return OK;
     return NOT_ENERGY;
 };
 
-int boardgame::need_to_rest(int player_id){};
-
-void boardgame::rest(int player_id)
+int boardgame::object_at(int x, int y)
 {
-    // player *p = &(this->player_list[player_id]);
-    // p->rest_count++;
-    // p->E += this->maxE / (5 - p->rest_count);
-};
-
-void boardgame::move_up(int player_id)
-{
-    this->player_list[player_id].x - 1;
-    this->player_list[player_id].rest_count = 0;
-    player p = player_list[player_id];
-    this->player_list[player_id].E -= trap_list[p.x][p.y];
-};
-void boardgame::move_down(int player_id)
-{
-    this->player_list[player_id].x + 1;
-    this->player_list[player_id].rest_count = 0;
-    player p = player_list[player_id];
-    this->player_list[player_id].E -= trap_list[p.x][p.y];
-};
-void boardgame::move_right(int player_id)
-{
-    this->player_list[player_id].y + 1;
-    this->player_list[player_id].rest_count = 0;
-    player p = player_list[player_id];
-    this->player_list[player_id].E -= trap_list[p.x][p.y];
-};
-void boardgame::move_left(int player_id)
-{
-    this->player_list[player_id].y - 1;
-    this->player_list[player_id].rest_count = 0;
-    player p = player_list[player_id];
-    this->player_list[player_id].E -= trap_list[p.x][p.y];
-};
-
-int boardgame::object_at(int x, int y) {
     return this->trap_list[x][y];
+}
+
+int boardgame::get_direction(int x1, int y1, int x2, int y2)
+{
+    for (int d = 0; d < 4; d++)
+    {
+        int x = x1 + DX[d];
+        int y = y1 + DY[d];
+        if (x == x1 && y == y1)
+            return d;
+    }
+    std::cout << "Found no direction :(" << std::endl;
+    return -1;
+}
+
+int boardgame::manhattan_distance(int x1, int y1, int x2, int y2)
+{
+    return abs(x1 - x2) + abs(y1 - y2);
+}
+
+bool boardgame::can_get_more_gold(int player_id)
+{
+    player p = this->get_player(player_id);
+    int d_min = INT32_MAX;
+    std::vector<gold> golds = this->golds_list();
+    for (gold g : golds)
+    {
+        int d = this->manhattan_distance(p.x, p.y, g.x, g.y);
+        d_min = std::min(d_min, d);
+    }
+    if (this->T <= d_min)
+        return true;
+    return false;
+}
+
+int boardgame::count_player_at(int x, int y)
+{
+    int cnt = 0;
+    for (player p : this->player_list)
+    {
+        if (p.x == x && p.y == y)
+        {
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
+gold boardgame::best_mine(int player_id)
+{
+    player p = this->get_player(player_id);
+    std::vector<gold> golds = this->golds_list();
+    gold best = golds.back();
+
+    // // debug
+    // return best;
+
+    int c_distance = this->manhattan_distance(p.x, p.y, best.x, best.y);
+
+    for (gold g : golds)
+    {
+        if (g.amount == 0)
+            continue;
+        int d = this->manhattan_distance(p.x, p.y, g.x, g.y);
+        // best.amount     g.amount
+        //------------  < ----------
+        // c_distance          d
+        if (best.amount * d < g.amount * c_distance)
+        {
+            best = g;
+            c_distance = d;
+        }
+
+        if (best.amount * d == g.amount * c_distance)
+        {
+            if (g.amount > best.amount)
+            {
+                best = g;
+            }
+        }
+    }
+
+    return best;
+}
+
+int boardgame::get_best_move(int player_id)
+{
+    // if(this->free_turn) {
+    //     this->free_turn --;
+    //     return A_FREE;
+    // }
+
+    player p = this->get_player(player_id);
+
+    // if(! this->can_get_more_gold(player_id)) {
+    //     return A_FREE;
+    // }
+
+    int code;
+
+    code = this->can_craft(player_id);
+    if (code == NOT_ENERGY)
+    {
+        // int amount_gold = this->golds_map[{p.x,p.y}];
+        // if(amount_gold == 50) {
+        //     return A_FREE;
+        // }
+
+        // int num_turn_to_get_full = 3 + 1.0*(this->maxE/5);
+        // if(num_turn_to_get_full > this->T) {
+        //     this->free_turn = 1;
+        //     return A_FREE;
+        // }
+        // this->free_turn = 2;
+        return A_FREE;
+    }
+    if (code == OK)
+    {
+        // TODO: think more...
+        return A_CRAFT;
+    }
+
+    gold g = this->best_mine(player_id);
+
+    // return MOVE_RIGHT;
+    return bfs_algorithm.best_direction(p.x, p.y, g.x, g.y);
+}
+
+void boardgame::move(int player_id, int direction)
+{
+    for (int i = 0; i < this->player_list.size(); i++)
+    {
+        if (this->player_list[i].id == player_id)
+        {
+            int x = this->player_list[i].x + DX[direction];
+            int y = this->player_list[i].y + DY[direction];
+
+            this->player_list[i].x = x;
+            this->player_list[i].y = y;
+
+            this->player_list[i].E -= this->trap_list[x][y];
+        }
+    }
+    this->T--;
+}
+
+void boardgame::craft(int player_id)
+{
+    // if()
 }
 
 void boardgame::show()

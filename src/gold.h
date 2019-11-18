@@ -5,8 +5,8 @@ class gold
 {
 private:
 public:
-    int posx;
-    int posy;
+    int x;
+    int y;
     int amount;
 
     gold(int posx, int posy, int amount);

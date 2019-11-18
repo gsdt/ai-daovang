@@ -56,6 +56,7 @@ void remote::send_all(std::string message) {
         exit(1);
     }
     std::cout << "Sent: " << message.length() << std::endl;
+    std::cout << "Sent message: " << message << std::endl;
 }
 
 std::string remote::read_all() {
