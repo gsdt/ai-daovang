@@ -13,7 +13,6 @@
 
 using namespace rapidjson;
 
-int turn_rest = 0;
 
 boardgame::boardgame(std::string raw_json)
 {
@@ -58,7 +57,6 @@ boardgame::boardgame(std::string raw_json)
         this->trap_list[x][y] = O_GOLD;
     }
 
-    this->bfs_algorithm.set_data(trap_list);
     this->free_turn = 0;
 }
 
@@ -169,14 +167,18 @@ int boardgame::object_at(int x, int y)
 
 int boardgame::get_direction(int x1, int y1, int x2, int y2)
 {
+    std::cout << "Getting direction: from " << x1 << ", " << y1 << " to " << x2 << ", " << y2 << std::endl;
     for (int d = 0; d < 4; d++)
     {
         int x = x1 + DX[d];
         int y = y1 + DY[d];
-        if (x == x1 && y == y1)
+        if (x == x2 && y == y2)
             return d;
     }
     std::cout << "Found no direction :(" << std::endl;
+    #ifdef DEBUG
+    throw "Found no direction !";
+    #endif
     return -1;
 }
 
@@ -195,7 +197,7 @@ bool boardgame::can_get_more_gold(int player_id)
         int d = this->manhattan_distance(p.x, p.y, g.x, g.y);
         d_min = std::min(d_min, d);
     }
-    if (this->T <= d_min)
+    if (this->T >= d_min)
         return true;
     return false;
 }
@@ -250,12 +252,69 @@ gold boardgame::best_mine(int player_id)
     return best;
 }
 
+int boardgame::best_direction(int player_id, int to_x, int to_y) {
+    player p = this->get_player(player_id);
+
+    std::priority_queue<step, std::vector<step> , Compare > q;
+
+    q.push(step(to_x, to_y, 0));
+
+    int visited[MAX_H][MAX_W];
+    int best_E[MAX_H][MAX_W];
+    
+    memset(visited, 0, sizeof(visited));
+    for(int i=0; i<this->h; i++) {
+        for(int j=0; j<this->w; j++) {
+            best_E[i][j] = INT32_MAX;
+        }
+    }
+
+    while(!q.empty()) {
+        step before = q.top();
+        q.pop();
+
+        if(visited[before.x][before.y]) continue;
+
+        visited[before.x][before.y] = true;
+
+        std::cout << "bfs: " << before.x << " " << before.y << " " << before.E << std:: endl;
+
+        if(before.x == p.x && before.y == p.y) {
+            return this->get_direction(before.x, before.y, before.prev_x, before.prev_y);
+        }
+
+        for(int i=0; i<4; i++) {
+            int next_x = before.x + DX[i];
+            int next_y = before.y + DY[i];
+
+            if(next_x < 0 || next_y < 0 || next_x >= this->h || next_y >= this->w) {
+                continue;
+            }
+
+            if(visited[next_x][next_y]) {
+                continue;
+            }
+
+            int next_E = before.E + DAMAGE[this->trap_list[next_x][next_y]];
+            if(next_E < best_E[next_x][next_y]) {
+                best_E[next_x][next_y] = next_E;
+
+                step s(next_x, next_y, next_E);
+                s.set_prev(before.x, before.y);
+                
+                q.push(s);
+            }
+        }
+    }
+}
+
+
 int boardgame::get_best_move(int player_id)
 {
-    // if(this->free_turn) {
-    //     this->free_turn --;
-    //     return A_FREE;
-    // }
+    if(this->free_turn) {
+        this->free_turn --;
+        return A_FREE;
+    }
 
     player p = this->get_player(player_id);
 
@@ -268,16 +327,18 @@ int boardgame::get_best_move(int player_id)
     code = this->can_craft(player_id);
     if (code == NOT_ENERGY)
     {
-        // int amount_gold = this->golds_map[{p.x,p.y}];
-        // if(amount_gold == 50) {
+        // int amount_gold = this->golds_map[{p.x,p.y}] / this->count_player_at(p.x, p.y);
+
+        // int expected_E = p.E + this->maxE/4;
+        // if(expected_E/5 >= amount_gold/50) {
         //     return A_FREE;
         // }
-
-        // int num_turn_to_get_full = 3 + 1.0*(this->maxE/5);
-        // if(num_turn_to_get_full > this->T) {
+        // expected_E = p.E + this->maxE*7/12;
+        // if(expected_E/5 >= amount_gold/50 || expected_E/5 > this->T) {
         //     this->free_turn = 1;
         //     return A_FREE;
         // }
+
         // this->free_turn = 2;
         return A_FREE;
     }
@@ -289,32 +350,9 @@ int boardgame::get_best_move(int player_id)
 
     gold g = this->best_mine(player_id);
 
-    // return MOVE_RIGHT;
-    return bfs_algorithm.best_direction(p.x, p.y, g.x, g.y);
+    return this->best_direction(player_id, g.x, g.y);
 }
 
-void boardgame::move(int player_id, int direction)
-{
-    for (int i = 0; i < this->player_list.size(); i++)
-    {
-        if (this->player_list[i].id == player_id)
-        {
-            int x = this->player_list[i].x + DX[direction];
-            int y = this->player_list[i].y + DY[direction];
-
-            this->player_list[i].x = x;
-            this->player_list[i].y = y;
-
-            this->player_list[i].E -= this->trap_list[x][y];
-        }
-    }
-    this->T--;
-}
-
-void boardgame::craft(int player_id)
-{
-    // if()
-}
 
 void boardgame::show()
 {

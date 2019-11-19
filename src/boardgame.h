@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <utility>
+#include <queue>
 
 class boardgame
 {
@@ -16,7 +17,6 @@ private:
     std::vector<std::vector<int>> trap_list;
     std::map<std::pair<int,int>, int> golds_map;
     int free_turn = 0;
-    BFS bfs_algorithm;
 public:
     int w, h, T, my_player_id, maxE;
     boardgame(std::string raw_json);
@@ -35,15 +35,11 @@ public:
     int count_player_at(int x, int y);
 
     gold best_mine(int player_id);
-
+    int best_direction(int player_id, int to_x, int to_y) ;
 
     // god bless us <3
     int get_best_move(int player_id);
 
-
-    void move(int player_id, int direction);
-    void craft(int player_id);
-    void free(int player_id);
     void show();
 };
 

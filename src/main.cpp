@@ -24,8 +24,6 @@ int main(int argc, char *argv[])
 
 	std::cout << code << std::endl;
 
-	int current_direction = D_RIGHT;
-
 	while (true)
 	{
 		int my_id = game.my_player_id;

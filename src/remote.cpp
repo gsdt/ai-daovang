@@ -63,8 +63,7 @@ std::string remote::read_all() {
     char buffer[BUFFER_SIZE];
     bzero(buffer, BUFFER_SIZE);
     int n_bytes = read(this->socket_fd, buffer, BUFFER_SIZE);
-    if (n_bytes < 0)
-    {
+    if (n_bytes < 0) {
         std::cerr << "Error: " << strerror(errno) << std::endl;
         exit(1);
     }

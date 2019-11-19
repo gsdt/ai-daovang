@@ -27,5 +27,5 @@ const std::string CMD[6] = {"0", "1", "2", "3", "4", "5"};
 const int DX[4] = {0, 0, -1, 1};
 const int DY[4] = {-1, 1, 0, 0};
 
-const int MAX_W = 19;
-const int MAX_H = 13;
+const int MAX_W = 28+1;
+const int MAX_H = 12+1;
