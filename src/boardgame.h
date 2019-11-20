@@ -39,6 +39,7 @@ public:
     
     bool can_get_more_gold(int player_id);
     int count_player_at(int x, int y);
+    int count_danger_player_at(int x, int y, int range);
 
     gold best_mine(int player_id);
 

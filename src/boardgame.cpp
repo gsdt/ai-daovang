@@ -177,7 +177,10 @@ int boardgame::object_at(int x, int y)
 
 int boardgame::get_direction(int x1, int y1, int x2, int y2)
 {
+    #ifdef DEBUG
     std::cout << "Getting direction: from " << x1 << ", " << y1 << " to " << x2 << ", " << y2 << std::endl;
+    #endif
+
     for (int d = 0; d < 4; d++)
     {
         int x = x1 + DX[d];
@@ -190,9 +193,11 @@ int boardgame::get_direction(int x1, int y1, int x2, int y2)
         }
     }
     std::cout << "Found no direction :(" << std::endl;
+    
     #ifdef DEBUG
     throw "Found no direction !";
     #endif
+    
     return -1;
 }
 
@@ -265,7 +270,7 @@ bool boardgame::can_get_more_gold(int player_id)
         return true;
     }
 
-    std::tuple<int, std::vector<int>,  int> result = this->best_direction(p.x, p.y, nearest.x, nearest.y);
+    auto result = this->best_direction(p.x, p.y, nearest.x, nearest.y);
 
     if(std::get<0>(result) == INT32_MAX) {
         #ifdef DEBUG
@@ -275,10 +280,6 @@ bool boardgame::can_get_more_gold(int player_id)
     }
 
     std::vector<int> trap_path = std::get<1>(result);
-
-    for(int x: trap_path) {
-        int turns = this->count_turn_from_path(player_id, trap_path);
-    }
 
     int turns = this->count_turn_from_path(player_id, trap_path);
 
@@ -310,6 +311,24 @@ int boardgame::count_player_at(int x, int y)
     }
     return cnt;
 }
+
+int boardgame::count_danger_player_at(int x, int y, int range) {
+    int cnt = 0;
+    for(player p: this->player_list) {
+        if(p.id == this->my_player_id) continue;
+        if(p.x != x || p.y != y) {
+            if((p.state == A_CRAFT) && ((this->golds_map[{p.x,p.y}] / 50) >= range)) {
+                continue;
+            }
+        }
+        int d = this->manhattan_distance(p.x, p.y, x, y);
+        if(d <= range && p.E > DIG_COST + d) {
+            cnt ++;
+        }
+    }
+    return cnt;
+}
+
 
 gold boardgame::best_mine(int player_id)
 {
@@ -455,7 +474,6 @@ std::tuple<int, std::vector<int>,  int> boardgame::best_direction(int from_x, in
                 s.T = next_T;
 
                 q.push(s);
-            
             }
         }
     }
@@ -482,18 +500,19 @@ int boardgame::get_best_move(int player_id)
     code = this->can_craft(player_id);
     if (code == NOT_ENERGY)
     {
-
         #ifdef DEBUG
         std::cout << "Not energy for craft: E = " << p.E << ", T = " << this->T << std::endl;
         #endif
         int amount_gold = this->golds_map[{p.x,p.y}] / this->count_player_at(p.x, p.y);
 
         int expected_E = p.E + this->maxE/4;
-        if((expected_E/5 >= amount_gold/50 && expected_E % 5 > 0) || expected_E/5 + 2 > this->T || this->maxE - expected_E < 5) {
+        if((this->count_danger_player_at(p.x, p.y, 1) && expected_E/5 >= amount_gold/50 && expected_E % 5 > 0) 
+            || expected_E/5 + 2 > this->T || this->maxE - expected_E < 5) {
             return A_FREE;
         }
         expected_E = p.E + this->maxE*7/12;
-        if((expected_E/5 >= amount_gold/50 && expected_E % 5 > 0) || expected_E/5 + 3 > this->T || this->maxE - expected_E < 5) {
+        if((this->count_danger_player_at(p.x, p.y, 2) && expected_E/5 >= amount_gold/50 && expected_E % 5 > 0) 
+            || expected_E/5 + 3 > this->T || this->maxE - expected_E < 5) {
             this->free_turn = 1;
             return A_FREE;
         }
@@ -504,7 +523,49 @@ int boardgame::get_best_move(int player_id)
     if (code == OK)
     {
         // TODO: think more...
-        
+        int cnt_players = this->count_player_at(p.x, p.y);
+        int amount_current = this->golds_map[{p.x, p.y}] / cnt_players;
+        if(amount_current < 50) {
+            int ok_coint = 0;
+            if(cnt_players > 1) {
+                ok_coint = this->golds_map[{p.x, p.y}] /(cnt_players-1);
+            }
+
+            gold best(-1, -1, -1);
+            double H = 0;
+
+            std::vector<gold> golds = this->golds_list(player_id);
+            for(gold g: golds) {
+                if(g.x == p.x && g.y == p.y) {
+                    
+                }
+                else {
+                    auto result = this->best_direction(p.x, p.y, g.x, g.y);
+                    if(std::get<2>(result) == INT32_MAX) continue;
+                    
+                    int turns = this->count_turn_from_path(player_id, std::get<1>(result));
+                    if(turns >= this->T) continue;
+
+                    g.amount = std::max(0, g.amount - this->count_player_at(g.x, g.y)*50*turns);
+                    g.amount /= (this->count_player_at(g.x, g.y) + 1);
+
+                    int remain_T = this->T - turns;
+                    g.amount = std::min(remain_T * 50, g.amount);
+
+                    if(g.amount <= amount_current || ok_coint > g.amount) continue;
+
+                    if(1.0 * g.amount / turns > H) {
+                        H = 1.0 * g.amount /turns;
+                        best = g;
+                    }
+                }
+            }
+
+            if(best.amount > amount_current) {
+                auto result = this->best_direction(p.x, p.y, best.x, best.y);
+                return std::get<2>(result);
+            }
+        }
         return A_CRAFT;
     }
 
