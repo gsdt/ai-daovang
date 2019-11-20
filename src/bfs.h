@@ -10,14 +10,13 @@
 struct step
 {
     int x, y;
-    int E, T;
+    int E;
     int prev_x, prev_y;
 
     step(int x, int y, int E) {
         this->x = x;
         this->y = y;
         this->E = E;
-        this->T = 0;
         this->prev_x = -1;
         this->prev_y = -1;
     }
@@ -34,9 +33,7 @@ class Compare
 public:
     bool operator() (step a, step b)
     {
-        if(a.T == b.T)
-            return a.E > b.E;
-        return a.T > b.T;
+        return a.E > b.E;
     }
 };
 
