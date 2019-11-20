@@ -1,3 +1,5 @@
+#ifndef CONSTANT_H
+#define CONSTANT_H
 #include <string>
 
 const int DAMAGE[5] = {1, 3, 2, 3, 4};
@@ -29,3 +31,5 @@ const int DY[4] = {-1, 1, 0, 0};
 
 const int MAX_W = 28+1;
 const int MAX_H = 12+1;
+
+#endif

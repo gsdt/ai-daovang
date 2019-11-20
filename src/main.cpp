@@ -30,23 +30,7 @@ int main(int argc, char *argv[])
 		
 		int action = game.get_best_move(my_id);
 		
-		if(action <0) {
-			r.send_all(CMD[A_FREE]);
-		}
-		else {
-			if(action < 4) {
-				code = game.can_move(my_id, action);
-				if(code == OK) {
-					r.send_all(CMD[action]);
-				}
-				else {
-					r.send_all(CMD[A_FREE]);
-				}
-			}
-			else {
-				r.send_all(CMD[action]);
-			}
-		}
+		r.send_all(CMD[action]);
 		
 		std::string msg = r.read_all();
 		game.update(msg);

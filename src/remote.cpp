@@ -9,7 +9,7 @@
 #include <netdb.h>
 #include <iostream>
 
-#define BUFFER_SIZE 40000
+#define BUFFER_SIZE 80000
 
 remote::remote(std::string HOST, int16_t PORT, int64_t timeout) {
     // Create socket
@@ -55,8 +55,10 @@ void remote::send_all(std::string message) {
         std::cerr << "Error: " << strerror(errno) << std::endl;
         exit(1);
     }
+    #ifdef DEBUG
     std::cout << "Sent: " << message.length() << std::endl;
     std::cout << "Sent message: " << message << std::endl;
+    #endif
 }
 
 std::string remote::read_all() {
@@ -67,6 +69,8 @@ std::string remote::read_all() {
         std::cerr << "Error: " << strerror(errno) << std::endl;
         exit(1);
     }
+    #ifdef DEBUG
     std::cout << "Read: " << strlen(buffer) << std::endl;
+    #endif
     return std::string(buffer);
 }

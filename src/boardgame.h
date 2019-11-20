@@ -14,7 +14,7 @@ class boardgame
 {
 private:
     std::vector<player> player_list;
-    std::vector<std::vector<int>> trap_list;
+    std::vector<std::vector<int>> trap_map;
     std::map<std::pair<int,int>, int> golds_map;
     int free_turn = 0;
 public:
@@ -30,9 +30,11 @@ public:
     int object_at(int x, int y);
 
     int manhattan_distance(int x1, int y1, int x2, int y2);
-    
+    int count_turn_from_path(int player_id, std::vector<int> trap_path);
     int get_direction(int x1, int y1, int x2, int y2);
-    std::pair<int, int> best_direction(int from_x, int from_y, int to_x, int to_y) ;
+    
+    // E, trap_path, direction
+    std::tuple<int, std::vector<int>,  int> best_direction(int from_x, int from_y, int to_x, int to_y) ;
     
     bool can_get_more_gold(int player_id);
     int count_player_at(int x, int y);
