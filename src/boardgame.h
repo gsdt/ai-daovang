@@ -22,14 +22,15 @@ public:
     boardgame(std::string raw_json);
     void update(std::string raw_json);
 
-    std::vector<gold> golds_list();
+    int manhattan_distance(int x1, int y1, int x2, int y2);
+    
+    std::vector<gold> golds_list(int player_id);
     player get_player(int player_id);
 
     int can_move(int player_id, int direction);
     int can_craft(int player_id);
     int object_at(int x, int y);
 
-    int manhattan_distance(int x1, int y1, int x2, int y2);
     int count_turn_from_path(int player_id, std::vector<int> trap_path);
     int get_direction(int x1, int y1, int x2, int y2);
     

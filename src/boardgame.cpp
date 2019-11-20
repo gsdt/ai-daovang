@@ -29,7 +29,7 @@ boardgame::boardgame(std::string raw_json)
     this->T = d["gameinfo"]["steps"].GetInt();
 
     // init value for players
-    int n = d["gameinfo"]["numberOfPlayers"].GetInt();
+    // int n = d["gameinfo"]["numberOfPlayers"].GetInt();
     int x = d["posy"].GetInt();
     int y = d["posx"].GetInt();
     this->maxE = d["energy"].GetInt();
@@ -40,7 +40,7 @@ boardgame::boardgame(std::string raw_json)
 
     //init data for trap
     Value &array_obstacles = d["gameinfo"]["obstacles"];
-    for (int i = 0; i < array_obstacles.Size(); i++)
+    for (size_t i = 0; i < array_obstacles.Size(); i++)
     {
         int x = array_obstacles[i]["posy"].GetInt();
         int y = array_obstacles[i]["posx"].GetInt();
@@ -50,7 +50,7 @@ boardgame::boardgame(std::string raw_json)
 
     // init data for gold
     Value &array_gold = d["gameinfo"]["golds"];
-    for (int i = 0; i < array_gold.Size(); i++)
+    for (size_t i = 0; i < array_gold.Size(); i++)
     {
         int x = array_gold[i]["posy"].GetInt();
         int y = array_gold[i]["posx"].GetInt();
@@ -71,7 +71,7 @@ void boardgame::update(std::string raw_json)
     //update data for player
     Value &array_player = d["players"];
     this->player_list.clear();
-    for (int i = 0; i < array_player.Size(); i++)
+    for (size_t i = 0; i < array_player.Size(); i++)
     {
         int id = array_player[i]["playerId"].GetInt();
         int x = array_player[i]["posy"].GetInt();
@@ -88,7 +88,7 @@ void boardgame::update(std::string raw_json)
     //init data for gold
     Value &array_gold = d["golds"];
     std::map<std::pair<int, int>, int> new_golds_map;
-    for (int i = 0; i < array_gold.Size(); i++)
+    for (size_t i = 0; i < array_gold.Size(); i++)
     {
         int x = array_gold[i]["posy"].GetInt();
         int y = array_gold[i]["posx"].GetInt();
@@ -119,15 +119,23 @@ player boardgame::get_player(int player_id)
             return p;
         }
     }
+    #ifdef DEBUG
+    throw "Oh? not found player?";
+    #endif
 }
 
-std::vector<gold> boardgame::golds_list()
+std::vector<gold> boardgame::golds_list(int player_id)
 {
+    player p = this->get_player(player_id);
     std::vector<gold> result;
     for (auto it : this->golds_map)
     {
+        if(this->manhattan_distance(p.x, p.y, it.first.first, it.first.second) >= T) {
+            continue;
+        }
         result.push_back(
-            gold(it.first.first, it.first.second, it.second));
+            gold(it.first.first, it.first.second, it.second)
+        );
     }
     return result;
 }
@@ -174,8 +182,12 @@ int boardgame::get_direction(int x1, int y1, int x2, int y2)
     {
         int x = x1 + DX[d];
         int y = y1 + DY[d];
-        if (x == x2 && y == y2)
+        if (x == x2 && y == y2) {
+            #ifdef DEBUG
+            std::cout << "We will move to " << d << std::endl;
+            #endif
             return d;
+        }
     }
     std::cout << "Found no direction :(" << std::endl;
     #ifdef DEBUG
@@ -195,11 +207,12 @@ int boardgame::count_turn_from_path(int player_id, std::vector<int> trap_path) {
     int cnt_turn = trap_path.size();
     std::vector<int> pre_sum(cnt_turn+1, 0);
 
-    for(int i=trap_path.size()-1; i>=0; i++) {
+
+    for(int i=trap_path.size()-1; i>=0; i--) {
         pre_sum[i] = pre_sum[i+1] + trap_path[i];
     }
 
-    for(int i=0; i<trap_path.size(); i++) {
+    for(size_t i=0; i<trap_path.size(); i++) {
         if(p.E <= trap_path[i]) {
             if(this->maxE *7/12 + p.E <= pre_sum[i]) {
                 cnt_turn += 3;
@@ -224,37 +237,64 @@ bool boardgame::can_get_more_gold(int player_id)
     #ifdef DEBUG
     std::cout << "Check if we can get more gold?" <<std::endl;
     #endif
+
     player p = this->get_player(player_id);
-    int d_min = INT32_MAX;
-    std::vector<gold> golds = this->golds_list();
+    std::vector<gold> golds = this->golds_list(player_id);
+    if(golds.empty()) {
+        #ifdef DEBUG
+        std::cout << "No, we don't" <<std::endl;
+        #endif
+        return false;
+    }
+    gold nearest = golds.front();
+    int d_min = this->manhattan_distance(p.x, p.y, nearest.x, nearest.y);
+
     for (gold g : golds)
     {
-        if(p.x == g.x && p.y == g.y) {
-            d_min = 0;
-            continue;
+        int current_distance = this->manhattan_distance(p.x ,p.y, g.x, g.y);
+        if(current_distance < d_min) {
+            d_min = current_distance;
+            nearest = g;
         }
-        int need_T = this->manhattan_distance(p.x, p.y, g.x, g.y);
-        int need_E = std::get<0>(this->best_direction(p.x, p.y, g.x, g.y)) - p.E;
-        
-        int t = need_E / this->maxE;
-        need_T += t * 3;
-        need_E -= need_E - t*this->maxE;
+    }
 
-        t = need_E / (this->maxE * 7/12);
-        need_T += t * 2;
-        need_E -= t * (this->maxE * 7/12);
+    if(d_min == 0) {
+        #ifdef DEBUG
+        std::cout << "Yes, we can <3" <<std::endl;
+        #endif
+        return true;
+    }
 
-        t = need_E / (this->maxE/4);
-        need_T += t;
-        need_E -= t *(this->maxE/4);
+    std::tuple<int, std::vector<int>,  int> result = this->best_direction(p.x, p.y, nearest.x, nearest.y);
 
-        d_min = std::min(d_min, need_T);
+    if(std::get<0>(result) == INT32_MAX) {
+        #ifdef DEBUG
+        std::cout << "No, we don't" <<std::endl;
+        #endif
+        return false;
+    }
+
+    std::vector<int> trap_path = std::get<1>(result);
+
+    for(int x: trap_path) {
+        int turns = this->count_turn_from_path(player_id, trap_path);
+    }
+
+    int turns = this->count_turn_from_path(player_id, trap_path);
+
+    #ifdef DEBUG
+    std::cout << "To earn nearest gold, we need " << turns << " turns. " <<std::endl;
+    #endif
+    
+    if (this->T > turns) {
+        #ifdef DEBUG
+        std::cout << "Yes, we can <3" <<std::endl;
+        #endif
+        return true;
     }
     #ifdef DEBUG
-    std::cout << "To earn nearest gold, we need " << d_min << " turns. " <<std::endl;
+    std::cout << "No, we don't" <<std::endl;
     #endif
-    if (this->T >= d_min + 1)
-        return true;
     return false;
 }
 
@@ -274,12 +314,11 @@ int boardgame::count_player_at(int x, int y)
 gold boardgame::best_mine(int player_id)
 {
     player p = this->get_player(player_id);
-    std::vector<gold> golds = this->golds_list();
-    gold best = golds.back();
-
+    std::vector<gold> golds = this->golds_list(player_id);
+    gold best = golds.front();
+    
 
     int c_distance = this->manhattan_distance(p.x, p.y, best.x, best.y);
-    // int c_distance = this->best_direction(p.x, p.y, best.x, best.y).first;
 
     for (gold g : golds)
     {
@@ -295,10 +334,6 @@ gold boardgame::best_mine(int player_id)
 
         g.amount = std::max(0, g.amount - distance*players_count*50);
         g.amount /= (players_count + 1);
-        #ifdef DEBUG
-        std::cout << "Amount at " << g.x << ", " << g.y << ": " << g.amount << std::endl;
-        #endif
-
 
         int remain_T = this->T - distance;
         g.amount = std::min(remain_T * 50, g.amount);
@@ -353,9 +388,9 @@ std::tuple<int, std::vector<int>,  int> boardgame::best_direction(int from_x, in
         visited[before.x][before.y] = true;
         trace[before.x][before.y] = {before.prev_x, before.prev_y};
 
-        // #ifdef DEBUG
-        // std::cout << "bfs: " << before.x << " " << before.y << " " << before.E << std:: endl;
-        // #endif
+        #ifdef DEBUG
+        std::cout << "DFS: (" << before.x << ", " << before.y << ") : E = " << before.E << ", T = " << before.T << std::endl;
+        #endif
 
         if(before.x == from_x && before.y == from_y) {
             int distance = before.E + DAMAGE[this->trap_map[to_x][to_y]];
@@ -367,7 +402,7 @@ std::tuple<int, std::vector<int>,  int> boardgame::best_direction(int from_x, in
             while(true) {
                 int x = trace[cx][cy].first;
                 int y = trace[cx][cy].second;
-                trap_path.push_back(this->trap_map[x][y]);
+                trap_path.push_back(DAMAGE[this->trap_map[x][y]]);
 
                 if(x == to_x && y == to_y) break;
                 cx = x;
@@ -386,6 +421,8 @@ std::tuple<int, std::vector<int>,  int> boardgame::best_direction(int from_x, in
             auto duration = duration_cast<microseconds>(stop - start);
             std::cout << "fun best_direction runtime: " << duration.count() << std::endl;
             #endif
+
+
             return std::make_tuple(distance, trap_path, direction);
         }
 
@@ -403,6 +440,11 @@ std::tuple<int, std::vector<int>,  int> boardgame::best_direction(int from_x, in
 
             int next_E = before.E + DAMAGE[this->trap_map[next_x][next_y]];
             int next_T = before.T + 1;
+
+            if(next_T > this->T) {
+                continue;
+            }
+           
             std::pair<int,int> cost = {next_T, next_E};
 
             if(cost < best_E[next_x][next_y]) {
@@ -410,11 +452,15 @@ std::tuple<int, std::vector<int>,  int> boardgame::best_direction(int from_x, in
                 
                 step s(next_x, next_y, next_E);
                 s.set_prev(before.x, before.y);
-                
+                s.T = next_T;
+
                 q.push(s);
+            
             }
         }
     }
+
+    return std::make_tuple(INT32_MAX, std::vector<int>(), INT32_MAX);
 }
 
 
@@ -443,11 +489,11 @@ int boardgame::get_best_move(int player_id)
         int amount_gold = this->golds_map[{p.x,p.y}] / this->count_player_at(p.x, p.y);
 
         int expected_E = p.E + this->maxE/4;
-        if(expected_E/5 > amount_gold/50 || expected_E/5 + 2 > this->T || this->maxE - expected_E < 5) {
+        if((expected_E/5 >= amount_gold/50 && expected_E % 5 > 0) || expected_E/5 + 2 > this->T || this->maxE - expected_E < 5) {
             return A_FREE;
         }
         expected_E = p.E + this->maxE*7/12;
-        if(expected_E/5 > amount_gold/50 || expected_E/5 + 3 > this->T || this->maxE - expected_E < 5) {
+        if((expected_E/5 >= amount_gold/50 && expected_E % 5 > 0) || expected_E/5 + 3 > this->T || this->maxE - expected_E < 5) {
             this->free_turn = 1;
             return A_FREE;
         }
@@ -458,14 +504,18 @@ int boardgame::get_best_move(int player_id)
     if (code == OK)
     {
         // TODO: think more...
+        
         return A_CRAFT;
     }
 
     if (code == NOT_GOLD) {
         gold g = this->best_mine(player_id);
         std::tuple<int, std::vector<int>,  int> result = this->best_direction(p.x, p.y, g.x, g.y);
-        
+
         int direction = std::get<2>(result);
+        if(direction == INT32_MAX) {
+            return A_FREE;
+        }
         int move_energy = std::get<0>(result);
 
         int code = this->can_move(player_id, direction);
@@ -508,7 +558,7 @@ void boardgame::show()
 
     std::cout << "Gold list: " << std::endl;
 
-    for (gold g : this->golds_list())
+    for (gold g : this->golds_list(this->my_player_id))
     {
         g.show();
     }

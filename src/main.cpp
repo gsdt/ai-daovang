@@ -27,7 +27,9 @@ int main(int argc, char *argv[])
 	while (true)
 	{
 		int my_id = game.my_player_id;
-		
+		#ifdef DEBUG
+		std::cout << "------------> " << game.T << " <-------------" << std::endl;
+		#endif
 		int action = game.get_best_move(my_id);
 		
 		r.send_all(CMD[action]);
