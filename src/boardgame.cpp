@@ -10,8 +10,10 @@
 #include <algorithm>
 #include <fstream>
 #include <tgmath.h>
+#include <chrono> 
 
 using namespace rapidjson;
+using namespace std::chrono; 
 
 
 boardgame::boardgame(std::string raw_json)
@@ -189,15 +191,39 @@ int boardgame::manhattan_distance(int x1, int y1, int x2, int y2)
 
 bool boardgame::can_get_more_gold(int player_id)
 {
+    #ifdef DEBUG
+    std::cout << "Check if we can get more gold?" <<std::endl;
+    #endif
     player p = this->get_player(player_id);
     int d_min = INT32_MAX;
     std::vector<gold> golds = this->golds_list();
     for (gold g : golds)
     {
-        int d = this->manhattan_distance(p.x, p.y, g.x, g.y);
-        d_min = std::min(d_min, d);
+        if(p.x == g.x && p.y == g.y) {
+            d_min = 0;
+            continue;
+        }
+        int need_T = this->manhattan_distance(p.x, p.y, g.x, g.y);
+        int need_E = this->best_direction(p.x, p.y, g.x, g.y).first - p.E;
+        
+        int t = need_E / this->maxE;
+        need_T += t * 3;
+        need_E -= need_E - t*this->maxE;
+
+        t = need_E / (this->maxE * 7/12);
+        need_T += t * 2;
+        need_E -= t * (this->maxE * 7/12);
+
+        t = need_E / (this->maxE/4);
+        need_T += t;
+        need_E -= t *(this->maxE/4);
+
+        d_min = std::min(d_min, need_T);
     }
-    if (this->T >= d_min)
+    #ifdef DEBUG
+    std::cout << "To earn nearest gold, we need " << d_min << " turns. " <<std::endl;
+    #endif
+    if (this->T >= d_min + 1)
         return true;
     return false;
 }
@@ -221,26 +247,42 @@ gold boardgame::best_mine(int player_id)
     std::vector<gold> golds = this->golds_list();
     gold best = golds.back();
 
-    // // debug
-    // return best;
 
     int c_distance = this->manhattan_distance(p.x, p.y, best.x, best.y);
+    // int c_distance = this->best_direction(p.x, p.y, best.x, best.y).first;
 
     for (gold g : golds)
     {
         if (g.amount == 0)
             continue;
-        int d = this->manhattan_distance(p.x, p.y, g.x, g.y);
-        // best.amount     g.amount
-        //------------  < ----------
-        // c_distance          d
-        if (best.amount * d < g.amount * c_distance)
-        {
-            best = g;
-            c_distance = d;
+        int distance = this->manhattan_distance(p.x, p.y, g.x, g.y);
+        if(distance >= this->T) {
+            continue;
         }
 
-        if (best.amount * d == g.amount * c_distance)
+
+        int players_count = this->count_player_at(g.x, g.y);
+
+        g.amount = std::max(0, g.amount - distance*players_count*50);
+        g.amount /= (players_count + 1);
+        #ifdef DEBUG
+        std::cout << "Amount at " << g.x << ", " << g.y << ": " << g.amount << std::endl;
+        #endif
+
+
+        int remain_T = this->T - distance;
+        g.amount = std::min(remain_T * 50, g.amount);
+
+        // best.amount     g.amount
+        //------------  < ----------
+        // c_distance      distance
+        if (best.amount * distance < g.amount * c_distance)
+        {
+            best = g;
+            c_distance = distance;
+        }
+
+        if (best.amount * distance == g.amount * c_distance)
         {
             if (g.amount > best.amount)
             {
@@ -252,20 +294,23 @@ gold boardgame::best_mine(int player_id)
     return best;
 }
 
-int boardgame::best_direction(int player_id, int to_x, int to_y) {
-    player p = this->get_player(player_id);
-
+std::pair<int, int> boardgame::best_direction(int from_x, int from_y, int to_x, int to_y) {
+    #ifdef DEBUG
+    std::cout << "finding best way from: (" << from_x << ", " << from_y << ") to (" << to_x << ", " << to_y << ")" << std:: endl;
+    auto start = high_resolution_clock::now();
+    #endif
     std::priority_queue<step, std::vector<step> , Compare > q;
 
     q.push(step(to_x, to_y, 0));
 
     int visited[MAX_H][MAX_W];
-    int best_E[MAX_H][MAX_W];
+    std::pair<int,int> best_E[MAX_H][MAX_W];
+    std::pair<int,int> trace[MAX_H][MAX_W];
     
     memset(visited, 0, sizeof(visited));
     for(int i=0; i<this->h; i++) {
         for(int j=0; j<this->w; j++) {
-            best_E[i][j] = INT32_MAX;
+            best_E[i][j] = {INT32_MAX, INT32_MAX};
         }
     }
 
@@ -277,10 +322,20 @@ int boardgame::best_direction(int player_id, int to_x, int to_y) {
 
         visited[before.x][before.y] = true;
 
+        #ifdef DEBUG
         std::cout << "bfs: " << before.x << " " << before.y << " " << before.E << std:: endl;
-
-        if(before.x == p.x && before.y == p.y) {
-            return this->get_direction(before.x, before.y, before.prev_x, before.prev_y);
+        #endif
+        if(before.x == from_x && before.y == from_y) {
+            int distance = before.E + DAMAGE[this->trap_list[to_x][to_y]];
+                distance -= DAMAGE[this->trap_list[from_x][from_y]];
+            int direction = this->get_direction(before.x, before.y, before.prev_x, before.prev_y);
+            
+            #ifdef DEBUG
+            auto stop  = high_resolution_clock::now();
+            auto duration = duration_cast<microseconds>(stop - start);
+            std::cout << "fun best_direction runtime: " << duration.count() << std::endl;
+            #endif
+            return std::make_pair(distance, direction);
         }
 
         for(int i=0; i<4; i++) {
@@ -296,8 +351,11 @@ int boardgame::best_direction(int player_id, int to_x, int to_y) {
             }
 
             int next_E = before.E + DAMAGE[this->trap_list[next_x][next_y]];
-            if(next_E < best_E[next_x][next_y]) {
-                best_E[next_x][next_y] = next_E;
+            int next_T = before.T + 1;
+            std::pair<int,int> cost = {next_T, next_E};
+
+            if(cost < best_E[next_x][next_y]) {
+                best_E[next_x][next_y] = cost;
 
                 step s(next_x, next_y, next_E);
                 s.set_prev(before.x, before.y);
@@ -318,28 +376,28 @@ int boardgame::get_best_move(int player_id)
 
     player p = this->get_player(player_id);
 
-    // if(! this->can_get_more_gold(player_id)) {
-    //     return A_FREE;
-    // }
+    if(! this->can_get_more_gold(player_id)) {
+        return A_FREE;
+    }
 
     int code;
 
     code = this->can_craft(player_id);
     if (code == NOT_ENERGY)
     {
-        // int amount_gold = this->golds_map[{p.x,p.y}] / this->count_player_at(p.x, p.y);
+        int amount_gold = this->golds_map[{p.x,p.y}] / this->count_player_at(p.x, p.y);
 
-        // int expected_E = p.E + this->maxE/4;
-        // if(expected_E/5 >= amount_gold/50) {
-        //     return A_FREE;
-        // }
-        // expected_E = p.E + this->maxE*7/12;
-        // if(expected_E/5 >= amount_gold/50 || expected_E/5 > this->T) {
-        //     this->free_turn = 1;
-        //     return A_FREE;
-        // }
+        int expected_E = p.E + this->maxE/4;
+        if(expected_E/5 >= amount_gold/50 || expected_E/5 + 2 > this->T || this->maxE - expected_E < 5) {
+            return A_FREE;
+        }
+        expected_E = p.E + this->maxE*7/12;
+        if(expected_E/5 >= amount_gold/50 || expected_E/5 + 3 > this->T || this->maxE - expected_E < 5) {
+            this->free_turn = 1;
+            return A_FREE;
+        }
 
-        // this->free_turn = 2;
+        this->free_turn = 2;
         return A_FREE;
     }
     if (code == OK)
@@ -348,9 +406,10 @@ int boardgame::get_best_move(int player_id)
         return A_CRAFT;
     }
 
-    gold g = this->best_mine(player_id);
-
-    return this->best_direction(player_id, g.x, g.y);
+    if (code == NOT_GOLD) {
+        gold g = this->best_mine(player_id);
+        return this->best_direction(p.x, p.y, g.x, g.y).second;
+    }
 }
 
 

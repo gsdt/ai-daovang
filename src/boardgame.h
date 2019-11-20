@@ -30,12 +30,14 @@ public:
     int object_at(int x, int y);
 
     int manhattan_distance(int x1, int y1, int x2, int y2);
+    
     int get_direction(int x1, int y1, int x2, int y2);
+    std::pair<int, int> best_direction(int from_x, int from_y, int to_x, int to_y) ;
+    
     bool can_get_more_gold(int player_id);
     int count_player_at(int x, int y);
 
     gold best_mine(int player_id);
-    int best_direction(int player_id, int to_x, int to_y) ;
 
     // god bless us <3
     int get_best_move(int player_id);
