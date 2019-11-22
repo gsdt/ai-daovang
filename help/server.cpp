@@ -5,17 +5,12 @@
 #include <netinet/in.h> 
 #include <string.h> 
 #include <time.h>
+#include <fstream>
 
-
-char *generate_long_string(int n)
-{
-    char *buffer = (char *)malloc(n + 1);
-    for (int i = 0; i < n; i++)
-    {
-        buffer[i] = 'a' + i % 26;
-    }
-    buffer[n] = 0;
-    return buffer;
+std::string read_all(std::string filename) {
+    std::ifstream ifs(filename);
+    std::string str(std::istreambuf_iterator<char>{ifs}, {});
+    return str;
 }
 
 int main(int argc, char const *argv[]) 
@@ -64,13 +59,13 @@ int main(int argc, char const *argv[])
         perror("accept"); 
         exit(EXIT_FAILURE); 
     } 
-    while(true) {
-        char *hello = generate_long_string(rand() % 9000 + 9000); 
-        send(new_socket , hello , strlen(hello) , 0 ); 
-        printf("Sent: %d bytes.\n", (int)strlen(hello)); 
+    // while(true) {
+        std::string data = read_all("init.json");
+        send(new_socket , data.c_str() , data.length() , 0 ); 
+        printf("Sent: %d bytes.\n", (int)data.length()); 
         
         valread = read( new_socket , buffer, 1024); 
         printf("%s\n",buffer ); 
-    }
+    // }
     return 0; 
 } 

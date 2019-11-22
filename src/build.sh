@@ -1,2 +1,2 @@
 #!/bin/bash
-g++ -Wall -DDEBUG main.cpp remote.cpp sockpp/*.cpp -o ../build/main
+g++ main.cpp remote.cpp player.cpp gold.cpp boardgame.cpp -o ../build/main
