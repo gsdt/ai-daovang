@@ -349,29 +349,12 @@ gold boardgame::best_mine(int player_id)
         }
 
 
-        int players_count = this->count_player_at(g.x, g.y);
-
-        g.amount = std::max(0, g.amount - distance*players_count*50);
-        g.amount /= (players_count + 1);
-
-        int remain_T = this->T - distance;
-        g.amount = std::min(remain_T * 50, g.amount);
-
-        // best.amount     g.amount
-        //------------  < ----------
-        // c_distance      distance
-        if (best.amount * distance < g.amount * c_distance)
-        {
-            best = g;
+        if(distance < c_distance) {
             c_distance = distance;
+            best = g;
         }
-
-        if (best.amount * distance == g.amount * c_distance)
-        {
-            if (g.amount > best.amount)
-            {
-                best = g;
-            }
+        else if(distance == c_distance && g.amount > best.amount) {
+            best = g;
         }
     }
 
